@@ -1,0 +1,5 @@
+.env
+
+songs/
+videos/
+__pycacache__/
