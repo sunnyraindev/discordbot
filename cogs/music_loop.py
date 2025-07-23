@@ -8,7 +8,7 @@ class MusicLoop(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.voice_client = None
-        self.song_dir = r"C:\Users\roro\Downloads\bot\songs"
+        self.song_dir = os.path.join(os.path.dirname(__file__), '..', 'songs')
         self.guild_id = 1241922816991825920
         self.channel_id = 1397617214986915870
         self.started = False
