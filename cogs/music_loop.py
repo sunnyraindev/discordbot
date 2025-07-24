@@ -13,10 +13,12 @@ class MusicLoop(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        if self.started:
-            return
-        self.started = True
+        if not self.started:
+            self.started = True
+            await self.connect_and_play()
+            self.ensure_alive.start()
 
+    async def connect_and_play(self):
         guild = self.bot.get_guild(self.guild_id)
         if not guild:
             print("Guild not found.")
@@ -27,50 +29,50 @@ class MusicLoop(commands.Cog):
             print("Voice channel not found.")
             return
 
-        if not channel.permissions_for(guild.me).connect:
-            print("Bot lacks permission to connect to voice.")
-            return
+        if not self.voice_client or not self.voice_client.is_connected():
+            try:
+                self.voice_client = await channel.connect(reconnect=True)
+                print("Connected to voice channel.")
+            except Exception as e:
+                print(f"Failed to connect: {e}")
+                return
 
-        self.voice_client = await channel.connect()
         self.start_stream()
-
-        self.ensure_playing_loop.start()  # Start background checker
 
     def start_stream(self):
         if self.voice_client and self.voice_client.is_connected():
             source = discord.FFmpegPCMAudio(self.stream_url)
-            self.voice_client.play(
-                source,
-                after=lambda e: self.on_stream_end(e)
-            )
+            self.voice_client.play(source, after=lambda e: self.on_stream_end(e))
+            print("[Music] Started stream.")
 
     def on_stream_end(self, error):
         if error:
-            print(f"[Stream Error] {error}")
+            print(f"[Music] Stream error: {error}")
         else:
-            print("Stream ended. Restarting...")
+            print("[Music] Stream ended.")
 
-        # Restart stream
-        asyncio.run_coroutine_threadsafe(self.restart_stream(), self.bot.loop)
+        # Always restart stream after disconnect
+        asyncio.run_coroutine_threadsafe(self.restart(), self.bot.loop)
 
-    async def restart_stream(self):
-        await asyncio.sleep(1)  # Slight delay before reconnecting
-        if self.voice_client and self.voice_client.is_connected():
+    async def restart(self):
+        print("[Music] Restarting stream...")
+        await asyncio.sleep(1)
+        if self.voice_client and not self.voice_client.is_connected():
+            await self.connect_and_play()
+        else:
             self.start_stream()
 
     @tasks.loop(seconds=30)
-    async def ensure_playing_loop(self):
-        """Checks periodically if the bot is still playing. If not, restarts the stream."""
-        if (
-            self.voice_client
-            and self.voice_client.is_connected()
-            and not self.voice_client.is_playing()
-        ):
-            print("[Checker] Bot is connected but not playing. Restarting stream...")
+    async def ensure_alive(self):
+        if not self.voice_client or not self.voice_client.is_connected():
+            print("[Check] Voice client disconnected. Reconnecting...")
+            await self.connect_and_play()
+        elif not self.voice_client.is_playing():
+            print("[Check] Voice connected but not playing. Restarting stream...")
             self.start_stream()
 
-    @ensure_playing_loop.before_loop
-    async def before_checker(self):
+    @ensure_alive.before_loop
+    async def before_ensure_alive(self):
         await self.bot.wait_until_ready()
 
 async def setup(bot):
