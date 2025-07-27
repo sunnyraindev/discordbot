@@ -43,19 +43,19 @@ class MusicLoop(commands.Cog):
         if self.voice_client and self.voice_client.is_connected():
             source = discord.FFmpegPCMAudio(self.stream_url)
             self.voice_client.play(source, after=lambda e: self.on_stream_end(e))
-            print("[Music] Started stream.")
+            print("Started stream.")
 
     def on_stream_end(self, error):
         if error:
-            print(f"[Music] Stream error: {error}")
+            print(f"Stream error: {error}")
         else:
-            print("[Music] Stream ended.")
+            print("Stream ended.")
 
         # Always restart stream after disconnect
         asyncio.run_coroutine_threadsafe(self.restart(), self.bot.loop)
 
     async def restart(self):
-        print("[Music] Restarting stream...")
+        print("Restarting stream...")
         await asyncio.sleep(1)
         if self.voice_client and not self.voice_client.is_connected():
             await self.connect_and_play()
