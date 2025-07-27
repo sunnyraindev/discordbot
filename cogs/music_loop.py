@@ -15,9 +15,14 @@ class MusicLoop(commands.Cog):
     async def on_ready(self):
         if not self.started:
             self.started = True
-            await asyncio.sleep(5)
-            await self.connect_and_play()
-            self.ensure_alive.start()
+            self.bot.loop.create_task(self.safe_start())
+
+    async def safe_start(self):
+        await self.bot.wait_until_ready()
+        await asyncio.sleep(5)  # Ensure all shards and caches are ready
+        await self.connect_and_play()
+        self.ensure_alive.start()
+
 
     async def connect_and_play(self):
         guild = self.bot.get_guild(self.guild_id)
