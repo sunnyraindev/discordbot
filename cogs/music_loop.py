@@ -15,6 +15,7 @@ class MusicLoop(commands.Cog):
     async def on_ready(self):
         if not self.started:
             self.started = True
+            await asyncio.sleep(5)
             await self.connect_and_play()
             self.ensure_alive.start()
 
