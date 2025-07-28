@@ -35,21 +35,24 @@ class MusicLoop(commands.Cog):
             print("Voice channel not found.")
             return
 
-        if not self.voice_client or not self.voice_client.is_connected():
-            try:
-                self.voice_client = await channel.connect(reconnect=True)
-                print("Connected to voice channel.")
-            except Exception as e:
-                print(f"Failed to connect: {e}")
-                return
+        if not self.voice_client:
+            self.voice_client = channel.guild.voice_client
 
-        self.start_stream()
+        if not self.voice_client or not self.voice_client.is_connected():
+            self.voice_client = await channel.connect(reconnect=True)
+
+            self.start_stream()
 
     def start_stream(self):
         if self.voice_client and self.voice_client.is_connected():
-            source = discord.FFmpegPCMAudio(self.stream_url)
-            self.voice_client.play(source, after=lambda e: self.on_stream_end(e))
-            print("Started stream.")
+            if not self.voice_client.is_playing():
+                source = discord.FFmpegPCMAudio(self.stream_url)
+                self.voice_client.play(source, after=lambda e: self.on_stream_end(e))
+                print("Started stream.")
+            else:
+                print("Stream is already playing.")
+        else:
+            print("Cannot start stream: not connected.")
 
     def on_stream_end(self, error):
         if error:
@@ -57,8 +60,14 @@ class MusicLoop(commands.Cog):
         else:
             print("Stream ended.")
 
-        # Always restart stream after disconnect
-        asyncio.run_coroutine_threadsafe(self.restart(), self.bot.loop)
+        async def safe_restart():
+            await asyncio.sleep(2)
+            try:
+                await self.restart()
+            except Exception as e:
+                print(f"Restart failed: {e}")
+
+        asyncio.run_coroutine_threadsafe(safe_restart(), self.bot.loop)
 
     async def restart(self):
         print("Restarting stream...")
