@@ -35,13 +35,32 @@ class MusicLoop(commands.Cog):
             print("Voice channel not found.")
             return
 
+        # Always fetch latest voice client reference
+        self.voice_client = guild.voice_client
+
+        # If connected to wrong channel, disconnect
+        if self.voice_client and self.voice_client.channel != channel:
+            print("Connected to the wrong voice channel. Disconnecting...")
+            await self.voice_client.disconnect(force=True)
+            self.voice_client = None
+
+        # If client exists but is not really working, disconnect it
+        if self.voice_client and not self.voice_client.is_connected():
+            print("Voice client is broken. Disconnecting...")
+            await self.voice_client.disconnect(force=True)
+            self.voice_client = None
+
+        # Now connect if no valid client
         if not self.voice_client:
-            self.voice_client = channel.guild.voice_client
+            try:
+                self.voice_client = await channel.connect(reconnect=True)
+                print("Connected to voice channel.")
+            except Exception as e:
+                print(f"Failed to connect: {e}")
+                return
 
-        if not self.voice_client or not self.voice_client.is_connected():
-            self.voice_client = await channel.connect(reconnect=True)
-
-            self.start_stream()
+        # Finally, start playback
+        self.start_stream()
 
     def start_stream(self):
         if self.voice_client and self.voice_client.is_connected():
@@ -72,7 +91,12 @@ class MusicLoop(commands.Cog):
     async def restart(self):
         print("Restarting stream...")
         await asyncio.sleep(1)
-        if self.voice_client and not self.voice_client.is_connected():
+
+        guild = self.bot.get_guild(self.guild_id)
+        if guild:
+            self.voice_client = guild.voice_client
+
+        if not self.voice_client or not self.voice_client.is_connected():
             await self.connect_and_play()
         else:
             self.start_stream()
