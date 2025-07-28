@@ -6,7 +6,7 @@ class MusicLoop(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.voice_client = None
-        self.stream_url = "http://147.185.221.27:29891/brd"
+        self.stream_url = "http://161.97.103.126:8000/stream"
         self.guild_id = 1241922816991825920
         self.channel_id = 1397617214986915870
         self.started = False
