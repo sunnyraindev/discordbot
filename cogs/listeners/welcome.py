@@ -30,8 +30,12 @@ class Welcome(commands.Cog):
         if not channel:
             return
 
-        role=discord.utils.get(member.server.roles, id="1241926830139637871")
-        await member.add_roles(role)
+        human_role = discord.utils.get(member.guild.roles, id=1241926830139637871)
+        bot_role = discord.utils.get(member.guild.roles, id=1265420082473861162)
+        if member and human_role:
+            await member.add_roles(human_role)
+        if member.bot and bot_role:
+            await member.add_roles(bot_role)
 
         # Check if user joined before
         if member.id in self.joined_users:
