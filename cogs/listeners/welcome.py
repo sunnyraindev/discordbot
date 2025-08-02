@@ -30,6 +30,9 @@ class Welcome(commands.Cog):
         if not channel:
             return
 
+        role=discord.utils.get(member.server.roles, id="1241926830139637871")
+        await member.add_roles(role)
+
         # Check if user joined before
         if member.id in self.joined_users:
             await channel.send(f"➡️ {member.mention} joined the server! Please don't leave again 🥺")
