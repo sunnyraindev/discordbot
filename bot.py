@@ -17,7 +17,7 @@ print("[Startup] Running bot...")
 @bot.event
 async def on_ready():
     await bot.tree.sync()  # Registers the slash commands
-    print(f"Bot is ready. Logged in as {bot.user}")
+    print(f"Bot is running. Logged in as {bot.user}")
 
 @bot.event
 async def setup_hook():
